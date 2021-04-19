@@ -1,0 +1,2 @@
+internetarchive
+openlibrary-client
