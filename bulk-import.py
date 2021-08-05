@@ -11,7 +11,6 @@
 
 import argparse
 import internetarchive as ia
-import json
 import os
 import re
 import sys
@@ -22,6 +21,10 @@ from requests.exceptions import ConnectionError, HTTPError
 from glob import glob
 from time import sleep
 
+try:
+    from simplejson.errors import JSONDecodeError
+except ImportError:
+    from json.decoder import JSONDecodeError
 
 BULK_API = '/api/import/ia'
 LOCAL_ID = re.compile(r'\/local_ids\/(\w+)')
@@ -177,7 +180,7 @@ if __name__ == '__main__':
             result = r.json()
             offset = result.get('next_record_offset')
             length = result.get('next_record_length')
-        except json.decoder.JSONDecodeError:
+        except JSONDecodeError:
             result = r.content
         print('{}: {} -- {}'.format(identifier, r.status_code, result))
         count += 1
