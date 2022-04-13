@@ -71,7 +71,7 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--number', help='Number of records to import', type=int, default=1)
     parser.add_argument('-o', '--offset', help='Offset in BYTES from which to start importing', type=int, default=0)
     parser.add_argument('-l', '--local', help='Import to a locally running Open Library dev instance for testing (localhost:8080)', action='store_true')
-    parser.add_argument('-d', '--dev', help='Import to dev.openlibrary.org Open Library dev instance for testing', action='store_true')
+    parser.add_argument('-t', '--testing', help='Import to testing.openlibrary.org Open Library instance for testing', action='store_true')
     parser.add_argument('-s', '--staging', help='Import to staging.openlibrary.org Open Library staging instance for testing', action='store_true')
 
     if len(sys.argv) == 1:
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     item = args.item
     fname = args.file
     local_testing = args.local
-    dev_testing = args.dev
+    dev_testing = args.testing
     staging_testing = args.staging
     barcode = args.barcode
 
@@ -92,9 +92,9 @@ if __name__ == '__main__':
         c = Credentials('openlibrary@example.com', 'admin123')
         ol = OpenLibrary(base_url=local_dev, credentials=c)
     elif staging_testing:
-        ol = OpenLibrary(base_url='http://staging.openlibrary.org')
+        ol = OpenLibrary(base_url='https://staging.openlibrary.org')
     elif dev_testing:
-        ol = OpenLibrary(base_url='https://dev.openlibrary.org')
+        ol = OpenLibrary(base_url='https://testing.openlibrary.org')
     else:
         ol = OpenLibrary()
 
