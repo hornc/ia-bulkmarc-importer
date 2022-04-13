@@ -74,7 +74,7 @@ The JSON response shows the item has been matched and no further changes were ma
 *Output:*
 ```
 usage: bulk-import.py [-h] [-i] [-b [BARCODE]] [-f FILE] [-n NUMBER]
-                      [-o OFFSET] [-l] [-d] [-s]
+                      [-o OFFSET] [-l] [-t] [-s]
                       [item]
 
 Bulk MARC importer.
@@ -94,7 +94,7 @@ optional arguments:
                         Offset in BYTES from which to start importing
   -l, --local           Import to a locally running Open Library dev instance
                         for testing (localhost:8080)
-  -d, --dev             Import to dev.openlibrary.org Open Library dev
+  -t, --testing         Import to testing.openlibrary.org Open Library
                         instance for testing
   -s, --staging         Import to staging.openlibrary.org Open Library staging
                         instance for testing
