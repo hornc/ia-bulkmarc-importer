@@ -20,12 +20,13 @@ Importing to https://openlibrary.org
 ITEM: marc_loc_2016
 FILENAME: None
 Item marc_loc_2016 has the following MARC files:
-BooksAll.2016.part01.utf8
-BooksAll.2016.part02.utf8
-BooksAll.2016.part03.utf8
-BooksAll.2016.part04.utf8
-BooksAll.2016.part05.utf8
+BooksAll.2016.part01.utf8 241731867
+BooksAll.2016.part02.utf8 205067420
+BooksAll.2016.part03.utf8 197959817
+BooksAll.2016.part04.utf8 182904720
+BooksAll.2016.part05.utf8 174132979
 ...
+BooksAll.2016.part43.utf8  27314711
 ```
 
 **Import the first 10 records from one file:**
@@ -84,7 +85,8 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -i, --info            List available MARC21 .mrc files on this item
+  -i, --info            List item's available MARC21 .mrc files with size in
+                        bytes
   -b [BARCODE], --barcode [BARCODE]
                         Barcoded local_id available for import
   -f FILE, --file FILE  Bulk MARC file to import

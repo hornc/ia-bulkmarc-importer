@@ -35,7 +35,7 @@ SHORT_CONNECT_WAIT =  5 * 60  # seconds
 
 
 def get_marc21_files(item):
-    return [f.name for f in ia.get_files(item) if MARC_EXT.match(f.name)]
+    return [f for f in ia.get_files(item) if MARC_EXT.match(f.name)]
 
 
 def log_error(response):
@@ -65,7 +65,7 @@ def next_record(identifier, ol):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Bulk MARC importer.')
     parser.add_argument('item', help='Source item containing MARC records', nargs='?')
-    parser.add_argument('-i', '--info', help='List available MARC21 .mrc files on this item', action='store_true')
+    parser.add_argument('-i', '--info', help="List item's available MARC21 .mrc files with size in bytes", action='store_true')
     parser.add_argument('-b', '--barcode', help='Barcoded local_id available for import', nargs='?', const=True, default=False)
     parser.add_argument('-f', '--file', help='Bulk MARC file to import')
     parser.add_argument('-n', '--number', help='Number of records to import', type=int, default=1)
@@ -111,8 +111,10 @@ if __name__ == '__main__':
         if item:
             # List MARC21 files, then quit.
             print('Item %s has the following MARC files:' % item)
-            for f in get_marc21_files(item):
-                print(f)
+            marcs = get_marc21_files(item)
+            width = len(str(max([f.size for f in marcs])))
+            for f in marcs:
+                print(f.name, str(f.size).rjust(width))
         ol.session.close()
         exit()
 
