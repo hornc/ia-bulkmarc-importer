@@ -32,7 +32,8 @@ MARC_EXT = re.compile(r'.*\.(mrc|utf8)$')
 
 SERVER_ISSUES_WAIT = 50 * 60  # seconds to wait if server is giving unexpected 5XXs likely to be resolved in time
 SHORT_CONNECT_WAIT =  5 * 60  # seconds
-
+CHECK_LEN = 2000
+RECORD_TERMINATOR = b'\x1d'  # MARC21 record terminator byte
 
 def get_marc21_files(item):
     return [f for f in ia.get_files(item) if MARC_EXT.match(f.name)]
@@ -118,22 +119,36 @@ if __name__ == '__main__':
         ol.session.close()
         exit()
 
-    limit = args.number  # if non-zero, a limit to only process this many records from each file
+    limit = args.number  # If non-zero: a limit to only process this many records from each file.
     count = 0
     offset = args.offset
-    length = 5  # we only need to get the length of the first record (first 5 bytes), the API will seek to the end.
-
+    length = 5  # We only need to get the length of the first record (first 5 bytes), the API will seek to the end.
 
     ol.session.mount('https://', HTTPAdapter(max_retries=10))
+
+    if offset < 0:
+        # Negative offset from EOF. We need to know the file size.
+        marcs = get_marc21_files(item)
+        [size] = (f.size for f in marcs if f.name == fname)
+        offset += size
+        print(f"File size = {size}. Using offset = {offset}.")
+
+    if offset > 0:
+        # Check we are at the start of a record, or find next record.
+        offset -= 1
+        url = f'https://archive.org/download/{item}/{fname}'
+        r = ol.session.get(url, headers={'Range': f'bytes={offset}-{offset + CHECK_LEN}'})
+        terminator = r.content.index(RECORD_TERMINATOR)
+        offset += terminator + 1
 
     while length:
         if limit and count >= limit:
             # Stop if a limit has been set, and we are over it.
             break
-        identifier = '{}/{}:{}:{}'.format(item, fname, offset, length)
+        identifier = f'{item}/{fname}:{offset}:{length}'
         data = {'identifier': identifier, 'bulk_marc': 'true'}
         if barcode and barcode is not True:
-            # A local_id key has been passed to import a specific local_id barcode
+            # A local_id key has been passed to import a specific local_id barcode.
             data['local_id'] = barcode
 
         try:
@@ -145,25 +160,25 @@ if __name__ == '__main__':
             status = r.status_code
             if status > 500:
                 error_summary = ''
-                # on 503, wait then retry
+                # On 503: wait then retry.
                 if r.status_code == 503:
                     length = 5
-                    offset = offset  # repeat current import
+                    offset = offset  # Repeat current import.
                     sleep(SERVER_ISSUES_WAIT)
                     continue
             elif status == 500:
-                # In debug mode 500s produce HTML with details of the error
+                # In debug mode 500s produce HTML with details of the error.
                 m = re.search(r'<h1>(.*)</h1>', r.text)
                 error_summary = m and m.group(1) or r.text
-                # Write error log
+                # Write error log to file.
                 error_log = log_error(r)
-                print("UNEXPECTED ERROR %s; [%s] WRITTEN TO: %s" % (r.status_code, error_summary, error_log))
+                print(f'UNEXPECTED ERROR {r.status_code}; [{error_summary}] WRITTEN TO: {error_log}')
 
                 if length == 5:
-                    # Two 500 errors in a row: skip to next record
+                    # Two 500 errors in a row: skip to next record.
                     offset, length = next_record(identifier, ol)
                     continue
-                if m:  # a handled, debugged, and logged error, unlikely to be resolved by retrying later:
+                if m:  # A handled, debugged, and logged error; unlikely to be resolved by retrying later:
                     # Skip this record and move to the next
                     offset = offset + length
                 else:
@@ -171,18 +186,18 @@ if __name__ == '__main__':
                 length = 5
                 print("%s:%s" % (offset, length))
                 continue
-            else:  # 4xx errors should have json content, to be handled in default 200 flow
+            else:  # 4xx errors should have json content; to be handled in default 200 flow.
                 pass
         except ConnectionError as e:
             print("CONNECTION ERROR: %s" % e.args[0])
             sleep(SHORT_CONNECT_WAIT)
             continue
-        # log results to stdout
+        # Log results to stdout.
         try:
             result = r.json()
             offset = result.get('next_record_offset')
             length = result.get('next_record_length')
         except JSONDecodeError:
             result = r.content
-        print('{}: {} -- {}'.format(identifier, r.status_code, result))
+        print(f'{identifier}: {r.status_code} -- {result}')
         count += 1
