@@ -1,2 +1,2 @@
-internetarchive
-openlibrary-client
+internetarchive==3.0.2
+git+https://github.com/internetarchive/openlibrary-client.git
