@@ -21,10 +21,12 @@ from requests.exceptions import ConnectionError, HTTPError
 from glob import glob
 from time import sleep
 
+
 try:
     from simplejson.errors import JSONDecodeError
 except ImportError:
     from json.decoder import JSONDecodeError
+
 
 BULK_API = '/api/import/ia'
 LOCAL_ID = re.compile(r'\/local_ids\/(\w+)')
@@ -34,6 +36,7 @@ SERVER_ISSUES_WAIT = 50 * 60  # seconds to wait if server is giving unexpected 5
 SHORT_CONNECT_WAIT =  5 * 60  # seconds
 CHECK_LEN = 2000
 RECORD_TERMINATOR = b'\x1d'  # MARC21 record terminator byte
+
 
 def get_marc21_files(item):
     return [f for f in ia.get_files(item) if MARC_EXT.match(f.name)]
@@ -99,9 +102,9 @@ if __name__ == '__main__':
     else:
         ol = OpenLibrary()
 
-    print('Importing to %s' % ol.base_url)
-    print('ITEM: %s' % item)
-    print('FILENAME: %s' % fname)
+    print(f'Importing to {ol.base_url}')
+    print(f'ITEM: {item}')
+    print(f'FILENAME: {fname}')
 
     if args.info:
         if barcode is True:
@@ -111,11 +114,11 @@ if __name__ == '__main__':
             print(LOCAL_ID.findall(r.json()['body']['value']))
         if item:
             # List MARC21 files, then quit.
-            print('Item %s has the following MARC files:' % item)
+            print(f'Item {item} has the following MARC files:')
             marcs = get_marc21_files(item)
             width = len(str(max([f.size for f in marcs])))
             for f in marcs:
-                print(f.name, str(f.size).rjust(width))
+                print('\t'.join([f.name, str(f.size).rjust(width)]))
         ol.session.close()
         exit()
 
@@ -150,7 +153,6 @@ if __name__ == '__main__':
         if barcode and barcode is not True:
             # A local_id key has been passed to import a specific local_id barcode.
             data['local_id'] = barcode
-
         try:
             r = ol.session.post(ol.base_url + BULK_API + '?debug=true', data=data)
             r.raise_for_status()
@@ -184,15 +186,15 @@ if __name__ == '__main__':
                 else:
                     sleep(SERVER_ISSUES_WAIT)
                 length = 5
-                print("%s:%s" % (offset, length))
+                print(f'{offset}:{length}')
                 continue
             else:  # 4xx errors should have json content; to be handled in default 200 flow.
                 pass
         except ConnectionError as e:
-            print("CONNECTION ERROR: %s" % e.args[0])
+            print(f'CONNECTION ERROR: {e.args[0]}')
             sleep(SHORT_CONNECT_WAIT)
             continue
-        # Log results to stdout.
+        # Log results to STDOUT.
         try:
             result = r.json()
             offset = result.get('next_record_offset')
