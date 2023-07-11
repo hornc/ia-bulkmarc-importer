@@ -116,7 +116,7 @@ if __name__ == '__main__':
             # List MARC21 files, then quit.
             print(f'Item {item} has the following MARC files:')
             marcs = get_marc21_files(item)
-            width = len(str(max([f.size for f in marcs])))
+            width = marcs and len(str(max([f.size for f in marcs])))
             for f in marcs:
                 print('\t'.join([f.name, str(f.size).rjust(width)]))
         ol.session.close()
