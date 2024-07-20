@@ -178,6 +178,7 @@ if __name__ == '__main__':
 
                 if length == 5:
                     # Two 500 errors in a row: skip to next record.
+                    sleep(SHORT_CONNECT_WAIT)
                     offset, length = next_record(identifier, ol)
                     continue
                 if m:  # A handled, debugged, and logged error; unlikely to be resolved by retrying later:
