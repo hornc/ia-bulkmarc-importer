@@ -34,6 +34,7 @@ MARC_EXT = re.compile(r'.*\.(mrc|utf8)$')
 
 SERVER_ISSUES_WAIT = 50 * 60  # seconds to wait if server is giving unexpected 5XXs likely to be resolved in time
 SHORT_CONNECT_WAIT =  5 * 60  # seconds
+MAX_RETRIES = 20
 CHECK_LEN = 2000
 RECORD_TERMINATOR = b'\x1d'  # MARC21 record terminator byte
 
@@ -57,8 +58,13 @@ def next_record(identifier, ol):
     """
     identifier: '{}/{}:{}:{}'.format(item, fname, offset, length)
     """
-    current = ol.session.get(ol.base_url + '/show-records/' + identifier)
-    m = re.search(r'<a href="\.\./[^/]+/[^:]+:([0-9]+):([0-9]+)".*Next</a>', current.text)
+    m = None
+    retries = 0
+    while retries < MAX_RETRIES and not m:
+        sleep(SHORT_CONNECT_WAIT)
+        current = ol.session.get(ol.base_url + '/show-records/' + identifier)
+        retries += 1
+        m = re.search(r'<a href="\.\./[^/]+/[^:]+:([0-9]+):([0-9]+)".*Next</a>', current.text)
     next_offset, next_length = m.groups()
     # Follow redirect to get actual length (next_length is always 5 to trigger the redirect)
     r = ol.session.head(ol.base_url + '/show-records/' + re.search(r'^[^:]*', identifier).group(0) + ':%s:%s' % (next_offset, next_length))
