@@ -72,7 +72,7 @@ def next_record(identifier, ol):
     return int(next_offset), int(next_length)
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description='Bulk MARC importer.')
     parser.add_argument('item', help='Source item containing MARC records', nargs='?')
     parser.add_argument('-i', '--info', help="List item's available MARC21 .mrc files with size in bytes", action='store_true')
@@ -81,6 +81,7 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--number', help='Number of records to import', type=int, default=1)
     parser.add_argument('-o', '--offset', help='Offset in BYTES from which to start importing', type=int, default=0)
     parser.add_argument('-l', '--local', help='Import to a locally running Open Library dev instance for testing (localhost:8080)', action='store_true')
+    parser.add_argument('-d', '--delay', help='Delay (in ms) between import requests', type=int, default=0)
     parser.add_argument('-t', '--testing', help='Import to testing.openlibrary.org Open Library instance for testing', action='store_true')
     parser.add_argument('-s', '--staging', help='Import to staging.openlibrary.org Open Library staging instance for testing', action='store_true')
 
@@ -160,6 +161,8 @@ if __name__ == '__main__':
             # A local_id key has been passed to import a specific local_id barcode.
             data['local_id'] = barcode
         try:
+            if args.delay:
+                sleep(args.delay / 1000)
             r = ol.session.post(ol.base_url + BULK_API + '?debug=true', data=data)
             r.raise_for_status()
 
@@ -210,3 +213,7 @@ if __name__ == '__main__':
             result = r.content
         print(f'{identifier}: {r.status_code} -- {result}')
         count += 1
+
+
+if __name__ == '__main__':
+    main()
