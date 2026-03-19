@@ -221,7 +221,7 @@ def main():
             length = result.get('next_record_length')
         except JSONDecodeError:
             result = r.content
-        print(f'{identifier}: {r.status_code} -- {result}')
+        print(f'{identifier}: {r.status_code} -- {result}', flush=True)
         count += 1
 
 
