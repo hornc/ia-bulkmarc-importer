@@ -84,6 +84,7 @@ def main():
     parser.add_argument('-d', '--delay', help='Delay (in ms) between import requests', type=int, default=0)
     parser.add_argument('-t', '--testing', help='Import to testing.openlibrary.org Open Library instance for testing', action='store_true')
     parser.add_argument('-s', '--staging', help='Import to staging.openlibrary.org Open Library staging instance for testing', action='store_true')
+    parser.add_argument('-R', '--no-retry', help='Do not wait to retry on 5xx, just move on', action='store_true')
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -96,6 +97,7 @@ def main():
     dev_testing = args.testing
     staging_testing = args.staging
     barcode = args.barcode
+    no_retry = args.no_retry
 
     if local_testing:
         Credentials = namedtuple('Credentials', ['username', 'password'])
@@ -112,6 +114,8 @@ def main():
     print(f'Importing to {ol.base_url}')
     print(f'ITEM: {item}')
     print(f'FILENAME: {fname}')
+    print(f'No Retry: {no_retry}')
+    print()
 
     if args.info:
         if barcode is True:
@@ -133,6 +137,7 @@ def main():
     count = 0
     offset = args.offset
     length = 5  # We only need to get the length of the first record (first 5 bytes), the API will seek to the end.
+    preview = False
 
     ol.session.mount('https://', HTTPAdapter(max_retries=10))
 
@@ -157,6 +162,8 @@ def main():
             break
         identifier = f'{item}/{fname}:{offset}:{length}'
         data = {'identifier': identifier, 'bulk_marc': 'true'}
+        if preview:
+            data['preview'] = 'true'
         if barcode and barcode is not True:
             # A local_id key has been passed to import a specific local_id barcode.
             data['local_id'] = barcode
@@ -172,7 +179,7 @@ def main():
             if status > 500:
                 error_summary = ''
                 # On 503: wait then retry.
-                if r.status_code == 503:
+                if r.status_code == 503 and not no_retry:
                     length = 5
                     offset = offset  # Repeat current import.
                     sleep(SERVER_ISSUES_WAIT)
@@ -185,7 +192,7 @@ def main():
                 error_log = log_error(r)
                 print(f'UNEXPECTED ERROR {r.status_code}; [{error_summary}] WRITTEN TO: {error_log}')
 
-                if length == 5:
+                if length == 5 and not no_retry:
                     # Two 500 errors in a row: skip to next record.
                     sleep(SHORT_CONNECT_WAIT)
                     offset, length = next_record(identifier, ol)
@@ -197,6 +204,9 @@ def main():
                     sleep(SERVER_ISSUES_WAIT)
                 length = 5
                 print(f'{offset}:{length}')
+                continue
+            elif status == 429:  # Too many requests
+                sleep(SHORT_CONNECT_WAIT)
                 continue
             else:  # 4xx errors should have json content; to be handled in default 200 flow.
                 pass
