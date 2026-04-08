@@ -82,8 +82,9 @@ def main():
     parser.add_argument('-o', '--offset', help='Offset in BYTES from which to start importing', type=int, default=0)
     parser.add_argument('-l', '--local', help='Import to a locally running Open Library dev instance for testing (localhost:8080)', action='store_true')
     parser.add_argument('-d', '--delay', help='Delay (in ms) between import requests', type=int, default=0)
-    parser.add_argument('-t', '--testing', help='Import to testing.openlibrary.org Open Library instance for testing', action='store_true')
+    parser.add_argument('-p', '--preview', help='Preview production import', action='store_true')
     parser.add_argument('-s', '--staging', help='Import to staging.openlibrary.org Open Library staging instance for testing', action='store_true')
+    parser.add_argument('-t', '--testing', help='Import to testing.openlibrary.org Open Library instance for testing', action='store_true')
     parser.add_argument('-R', '--no-retry', help='Do not wait to retry on 5xx, just move on', action='store_true')
 
     if len(sys.argv) == 1:
@@ -98,6 +99,7 @@ def main():
     staging_testing = args.staging
     barcode = args.barcode
     no_retry = args.no_retry
+    preview = args.preview
 
     if local_testing:
         Credentials = namedtuple('Credentials', ['username', 'password'])
@@ -115,6 +117,7 @@ def main():
     print(f'ITEM: {item}')
     print(f'FILENAME: {fname}')
     print(f'No Retry: {no_retry}')
+    print(f'Preview: {preview}')
     print()
 
     if args.info:
@@ -137,7 +140,6 @@ def main():
     count = 0
     offset = args.offset
     length = 5  # We only need to get the length of the first record (first 5 bytes), the API will seek to the end.
-    preview = False
 
     ol.session.mount('https://', HTTPAdapter(max_retries=10))
 
