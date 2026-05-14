@@ -48,7 +48,7 @@ def log_error(response):
     current_errors = glob('error*.html')
     for f in current_errors:
         n = max(n, 1 + int(re.search(r'[0-9]+', os.path.splitext(f)[0]).group(0)))
-    name = 'error_%d.html' % n
+    name = f'error_{n}.html'
     with open(name, 'w') as error_log:
         error_log.write(response.content.decode())
     return name
@@ -56,7 +56,7 @@ def log_error(response):
 
 def next_record(identifier, ol):
     """
-    identifier: '{}/{}:{}:{}'.format(item, fname, offset, length)
+    identifier: f'{item}/{fname}:{offset}:{length}'
     """
     m = None
     retries = 0
@@ -67,7 +67,7 @@ def next_record(identifier, ol):
         m = re.search(r'<a href="\.\./[^/]+/[^:]+:([0-9]+):([0-9]+)".*Next</a>', current.text)
     next_offset, next_length = m.groups()
     # Follow redirect to get actual length (next_length is always 5 to trigger the redirect)
-    r = ol.session.head(ol.base_url + '/show-records/' + re.search(r'^[^:]*', identifier).group(0) + ':%s:%s' % (next_offset, next_length))
+    r = ol.session.head(ol.base_url + '/show-records/' + re.search(r'^[^:]*', identifier).group(0) + f':{next_offset}:{next_length}')
     next_length = re.search(r'[^:]*$', r.headers.get('Location', '5')).group(0)
     return int(next_offset), int(next_length)
 
